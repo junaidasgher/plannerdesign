@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Blueprint JS - Floorplan</title>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<link href="css/app.css" rel="stylesheet">
+	<link rel="stylesheet" href="css/custom.css">
+	<!-- :IR add custom css file -->
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="https://cdn.rawgit.com/nnattawat/flip/master/dist/jquery.flip.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.3/dat.gui.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="js/bp3djs.min.js"></script>
+	<script src="js/items.js"></script>
+	<script src="js/items_gltf.js"></script>
+	<script src="js/app.js"></script>
+	<!-- <script src="js/custom.js"></script> -->
+</head>
+
+<body>
+	<div id='interfaces' class='card'>
+			<div id="floorplanner" class='front'>
+			<div id="floorplanner-controls">
+				<a href="#" class="btn btn-sm glyphicon glyphicon-floppy-disk" id="new2d" title="New Layout"></a>
+				<button id="move" class="btn btn-sm" title="Move Walls">	<span class="glyphicon glyphicon-move"></span>
+				</button>
+				<button id="draw" class="btn btn-sm" title="Draw New Walls">	<span class="glyphicon glyphicon-pencil"></span>
+				</button>
+				<button id="delete" class="btn btn-sm" title="Delete Walls">	<span class="glyphicon glyphicon-remove"></span>
+				</button>
+				<button id="help2d" class="btn btn-sm" title="Tips&#10;Shift Key: Snap To Axis&#10;ESC: Stop drawing walls">	<span class="glyphicon glyphicon-info-sign"></span>
+				</button>
+			</div>
+			<div class="btn-hint ">Press the "Esc" key to stop drawing walls</div>
+			<canvas id="floorplanner-canvas"></canvas>
+			</div>
+			<div id="viewer" class='back'>
+			<div id="main-controls">
+				<a href="#" class="btn btn-sm glyphicon glyphicon-floppy-disk" id="new" title="New Layout"></a>
+				<a href="#" class="btn btn-sm glyphicon glyphicon-floppy-save" id="saveFile" title="Save Layout"></a>
+				<a class="btn btn-sm btn-file glyphicon glyphicon-floppy-open">
+				<input type="file" class="hidden-input" id="loadFile">
+				</a>
+				<a href="#" class="btn btn-sm glyphicon glyphicon-asterisk" id="saveMesh" title="Save Scene as a mesh"></a>
+				<a href="#" class="btn btn-sm glyphicon glyphicon-export" id="saveGLTF" title="Save Scene as a GLTF"></a>
+			</div>
+			</div>
+
+<!-- 3d page -->
+<div class="three-D" style="display: none;">
+	<div class="card text-for-add">
+		<div class="dummy-text">dummy-text.............</div>
+	</div>
+	<!-- :IR logo main menu -->
+	<div class="card site-logo"> <img src="images/logo/logo.svg" alt=""> </div>
+	<!-- :IR start top right header -->
+	<div class="card top-right-header">
+		<div class="btn-group" role="group">
+			<button type="button" class="btn" title="Left-arrow"><span class="glyphicon glyphicon-arrow-left"></span></button>
+			<button type="button" class="btn" title="Right-arrow"><span class="glyphicon glyphicon-arrow-right"></span></button>
+			<a class="btn" href="#" id="isometryview" title="Show 3d view"> <span class="glyphicon glyphicon-inbox"></span> </a>
+			<div class="btn-group removed-border-from-dropdowns">
+				<button type="button" class="btn" title="view" id="l-r-t-b-c-menu"> <i class="glyphicon glyphicon-eye-open"></i> <span class="caret"></span> </button>
+				<ul class="dropdown-menu" role="menu" id="l-r-t-b-c-drop-down-menu">
+					<div class="btn-group-vertical">
+						<button class="btn btn-sm l-r-t-b-c-close-btn"><span class="glyphicon glyphicon-remove"></span></button>
+						<div class="btn-sm">
+							<a class="btn bottom" href="#" id="leftview" title="Show side view (left)"> <span class="glyphicon glyphicon-object-align-left"></span> </a> <span class="btn-group-vertical">
+							<a class="btn" href="#" id="topview" title="Show top view">
+							<span class="glyphicon glyphicon-object-align-horizontal"></span></a>
+							<a class="btn" href="#" id="isometryview" title="Show 3d view"> <span class="glyphicon glyphicon-inbox"></span> </a>
+							<a class="btn" href="#" id="frontview" title="Show front view"> <span class="glyphicon glyphicon-object-align-vertical"></span> </a>
+							</span>
+							<a class="btn bottom" href="#" id="rightview" title="Show side view (right)"> <span class="glyphicon glyphicon-object-align-right"></span> </a>
+						</div>
+						<button id="showSwitchCameraMode" class="btn btn-sm" title="Switch Camera ortho/perspective"> <span class="glyphicon glyphicon-camera"></span>	</button>
+						<button id="showSwitchWireframeMode" class="btn btn-sm" title="Switch wireframe mode">	<span class="glyphicon glyphicon-pencil"></span> </button>
+					</div>
+				</ul>
+			</div>
+		</div>
+		<div class="btn-group" role="group">
+			<button type="button" class="btn"><i class="glyphicon glyphicon-floppy-save" title="save"></i></button>
+			<button type="button" class="btn" title="new project"><span class="glyphicon glyphicon-file"></span></button>
+			<div class="btn-group removed-border-from-dropdowns" id="project-id-time-duration">
+				<button type="button" class="btn dropdown-toggle" data-toggle="dropdown" title="upload project"> <i class="glyphicon glyphicon-upload"></i> <span class="caret"></span></button>
+				<!-- <ul class="dropdown-menu projects-dropdown-menu" role="menu">
+						<li><a href="#">first project</a></li>
+						<li><a href="#">sec project</a></li>
+						<li><a href="#">third project</a></li>
+						<li><a href="#">fourth project</a></li>
+						<li><a href="#">fifth project</a></li>
+						</ul> -->
+			</div>
+			<button type="button" class="btn two-d-view" id="test-for-2d-view" title="click and go 2d view">2D</button>
+			<button id="showFirstPerson" class="btn btn-sm btn-default" title="Walk through">	<span class="glyphicon glyphicon-eye-open"></span>
+			</button>
+		</div>
+		<div class="btn-group" role="group">
+			<button type="button" class="btn"><i class="glyphicon glyphicon-shopping-cart" title="shopping-cart"></i></button>
+			<div class="btn-group removed-border-from-dropdowns" id="currency-id">
+				<button type="button" class="btn dropdown-toggle" data-toggle="dropdown" title="Currency"> 1266 <i class="glyphicon glyphicon-euro currency-icons-size"></i> <span class="caret"></span> </button>
+				<ul class="dropdown-menu currency-dropdown-menu" role="menu">
+					<li><a href="#" title="dollar" class="currency-icons-size">&#36;</a></li>
+					<li><a href="#" title="cent" class="currency-icons-size">&#162;</a></li>
+					<li><a href="#" title="pound" class="currency-icons-size">&#163;</a></li>
+					<li><a href="#" title="yen" class="currency-icons-size">&#165;</a></li>
+					<li><a href="#" title="franc" class="currency-icons-size">&#8355;</a></li>
+					<li><a href="#" title="lira" class="currency-icons-size">&#8356;</a></li>
+					<li><a href="#" title="peseta" class="currency-icons-size">&#8359;</a></li>
+					<li><a href="#" title="pound" class="currency-icons-size">&#128;</a></li>
+					<li><a href="#" title="euro" class="currency-icons-size">&#165;</a></li>
+					<li><a href="#" title="rupee" class="currency-icons-size">&#x20B9;</a></li>
+					<li><a href="#" title="won" class="currency-icons-size">&#8361;</a></li>
+					<li><a href="#" title="hryvnia" class="currency-icons-size">&#8372;</a></li>
+					<li><a href="#" title="drachma" class="currency-icons-size">&#8367;</a></li>
+					<li><a href="#" title="tugrik" class="currency-icons-size">&#8366;</a></li>
+					<li><a href="#" title="german" class="currency-icons-size">&#8368;</a></li>
+					<li><a href="#" title="guarani" class="currency-icons-size">&#8370;</a></li>
+					<li><a href="#" title="peso" class="currency-icons-size">&#8369;</a></li>
+					<li><a href="#" title="austral" class="currency-icons-size">&#8371;</a></li>
+					<li><a href="#" title="cedi" class="currency-icons-size">&#8373;</a></li>
+					<li><a href="#" title="kip" class="currency-icons-size">&#8365;</a></li>
+					<li><a href="#" title="new sheqel" class="currency-icons-size">&#8362;</a></li>
+					<li><a href="#" title="dong" class="currency-icons-size">&#8363;</a></li>
+				</ul>
+			</div>
+			<button type="button" class="btn reduced-price currency-icons-size"> 1566 &#128;</button>
+		</div>
+		<div class="btn-group btns-float-right" role="group">
+			<button type="button" class="btn" onclick="openFullscreen();"><span class="glyphicon glyphicon-fullscreen" title="full screen"></span></button>
+			<button type="button" class="btn"><i class="glyphicon glyphicon-cog" title="settings"></i></button>
+			<button type="button" data-toggle="modal" data-target="#exampleModal" class="btn login-btn-left-side"> <i class="glyphicon glyphicon-log-in"></i>
+				<p>login</p>
+			</button>
+			<button type="button" data-toggle="modal" data-target="#exampleModal-two" class="btn login-btn-end-side"> <i class="glyphicon glyphicon-registration-mark"></i>
+				<p>register</p>
+			</button>
+			<div class="btn-group removed-border-from-dropdowns first-dropdown-btns-float-right">
+				<button type="button" class="btn dropdown-toggle text-sm-icons-lg" data-toggle="dropdown">
+					<p>eng</p> <span class="caret"></span> </button>
+				<ul class="dropdown-menu lng-dropdown-menu" role="menu">
+					<li><a href="#">English</a></li>
+					<li><a href="#">Spanish</a></li>
+					<li><a href="#">Franches</a></li>
+				</ul>
+			</div>
+			<div class="btn-group removed-border-from-dropdowns sec-dropdown-btns-float-right">
+				<button type="button" class="btn dropdown-toggle text-sm-icons-lg" data-toggle="dropdown">
+					<p>cm</p> <span class="caret"></span> </button>
+				<ul class="dropdown-menu measure-dropdown-menu" role="menu">
+					<li><a href="#">cm</a></li>
+					<li><a href="#">mm</a></li>
+					<li><a href="#">m</a></li>
+					<li><a href="#">km</a></li>
+				</ul>
+			</div>
+			<button type="button" class="btn"><i class="glyphicon glyphicon-question-sign" title="any help"></i></button>
+		
+		</div>
+	</div>
+	<!-- :IR end top header -->
+	<!-- :IR start login form -->
+	<div class="modal fade oursforms-login" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-body">
+					<div class="card login-page">
+						<div class="login login-1" id="first">
+							<header class="login--header login-1--header text-center"> <span class="icon icon-medium glyphicon glyphicon-user"></span>
+								<h3>login</h3> <span class="arrow-down login--header__arrow"></span> </header>
+							<form class="login--form">
+								<div class="login--form__input-area input-group"> <span class="input-group-addon">
+									<span class="glyphicon glyphicon-user"></span> </span>
+									<input type="email" class="form-control" placeholder="email" /> </div>
+								<div class="login--form__input-area input-group"> <span class="input-group-addon">
+									<span class="glyphicon glyphicon-lock"></span> </span>
+									<input id="password-field" type="password" class="form-control eye-class-3d" name="password" placeholder="password"> <span class="fa-fw glyphicon glyphicon-eye-close field-icon" id="eye-3d"></span> </div>
+								<div class="login--form__input-area unstyled centered">
+									<input class="styled-checkbox" id="styled-checkbox-1" type="checkbox" value="value1" />
+									<label for="styled-checkbox-1">Remember me?</label>
+								</div>
+								<button type="button" class="login--form__button btn btn-default" value="submit">sign in</button>
+							</form>
+							<footer class="login--footer text-center">
+								<button type="button" class="btn btn-default" value="submit" id="password-recovery">Have you forgotten the password?</button>
+								<p class="login--footer__text">Or you can login with one of the following</p>
+								<div class="login--footer__social-buttons">
+									<a href="#"> <span class="icon icon-small icon-fb">
+										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-facebook" viewBox="0 0 16 16">
+											<path
+												d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"
+												/>
+										</svg>
+									</span> </a>
+									<a href="#"> <span class="icon icon-small icon-tw">
+										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter" viewBox="0 0 16 16">
+											<path
+												d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"
+												/>
+										</svg>
+									</span> </a>
+									<a href="#"> <span class="icon icon-small icon-gp">
+										<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google-plus-g" class="svg-inline--fa fa-google-plus-g" role="img" viewBox="0 0 640 512">
+											<path
+												fill="currentColor"
+												d="M386.061 228.496c1.834 9.692 3.143 19.384 3.143 31.956C389.204 370.205 315.599 448 204.8 448c-106.084 0-192-85.915-192-192s85.916-192 192-192c51.864 0 95.083 18.859 128.611 50.292l-52.126 50.03c-14.145-13.621-39.028-29.599-76.485-29.599-65.484 0-118.92 54.221-118.92 121.277 0 67.056 53.436 121.277 118.92 121.277 75.961 0 104.513-54.745 108.965-82.773H204.8v-66.009h181.261zm185.406 6.437V179.2h-56.001v55.733h-55.733v56.001h55.733v55.733h56.001v-55.733H627.2v-56.001h-55.733z"
+												/>
+										</svg>
+									</span> </a>
+								</div>
+								<p class="login--footer__text text-center"> dont have an account? </p>
+								<button class="btn btn-default" type="button" id="click-on-login" data-toggle="modal" data-target="#exampleModal">Create Account</button>
+								<br>
+								<button type="button" class="login-and-reg-close-btn" data-dismiss="modal"> Close </button>
+							</footer>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- :IR end login form -->
+	<!-- :IR start register form -->
+	<div class="modal fade oursforms-reg" id="exampleModal-two" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog mobile-modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-body">
+					<div class="row">
+						<div class="card background register-form">
+							<div class="col-lg-6 col-md-5 col-sm-6 col-xs-12">
+								<div class="input-group formBox-socials ipad-pro-formBox-socials ipad-formBox-socials small-d-formBox-socials">
+									<button class="icon-facebook">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="#000000" viewBox="0 0 30 30" width="30px" height="30px">
+											<path d="M12,27V15H8v-4h4V8.852C12,4.785,13.981,3,17.361,3c1.619,0,2.475,0.12,2.88,0.175V7h-2.305C16.501,7,16,7.757,16,9.291V11 h4.205l-0.571,4H16v12H12z" /> </svg>
+										<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Facebook</text>
+									</button>
+									<button class="icon-twitter">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="#000000" viewBox="0 0 50 50" width="50px" height="50px">
+											<path d="M 34.21875 5.46875 C 28.238281 5.46875 23.375 10.332031 23.375 16.3125 C 23.375 16.671875 23.464844 17.023438 23.5 17.375 C 16.105469 16.667969 9.566406 13.105469 5.125 7.65625 C 4.917969 7.394531 4.597656 7.253906 4.261719 7.277344 C 3.929688 7.300781 3.632813 7.492188 3.46875 7.78125 C 2.535156 9.386719 2 11.234375 2 13.21875 C 2 15.621094 2.859375 17.820313 4.1875 19.625 C 3.929688 19.511719 3.648438 19.449219 3.40625 19.3125 C 3.097656 19.148438 2.726563 19.15625 2.425781 19.335938 C 2.125 19.515625 1.941406 19.839844 1.9375 20.1875 L 1.9375 20.3125 C 1.9375 23.996094 3.84375 27.195313 6.65625 29.15625 C 6.625 29.152344 6.59375 29.164063 6.5625 29.15625 C 6.21875 29.097656 5.871094 29.21875 5.640625 29.480469 C 5.410156 29.742188 5.335938 30.105469 5.4375 30.4375 C 6.554688 33.910156 9.40625 36.5625 12.9375 37.53125 C 10.125 39.203125 6.863281 40.1875 3.34375 40.1875 C 2.582031 40.1875 1.851563 40.148438 1.125 40.0625 C 0.65625 40 0.207031 40.273438 0.0507813 40.71875 C -0.109375 41.164063 0.0664063 41.660156 0.46875 41.90625 C 4.980469 44.800781 10.335938 46.5 16.09375 46.5 C 25.425781 46.5 32.746094 42.601563 37.65625 37.03125 C 42.566406 31.460938 45.125 24.226563 45.125 17.46875 C 45.125 17.183594 45.101563 16.90625 45.09375 16.625 C 46.925781 15.222656 48.5625 13.578125 49.84375 11.65625 C 50.097656 11.285156 50.070313 10.789063 49.777344 10.445313 C 49.488281 10.101563 49 9.996094 48.59375 10.1875 C 48.078125 10.417969 47.476563 10.441406 46.9375 10.625 C 47.648438 9.675781 48.257813 8.652344 48.625 7.5 C 48.75 7.105469 48.613281 6.671875 48.289063 6.414063 C 47.964844 6.160156 47.511719 6.128906 47.15625 6.34375 C 45.449219 7.355469 43.558594 8.066406 41.5625 8.5 C 39.625 6.6875 37.074219 5.46875 34.21875 5.46875 Z M 34.21875 7.46875 C 36.769531 7.46875 39.074219 8.558594 40.6875 10.28125 C 40.929688 10.53125 41.285156 10.636719 41.625 10.5625 C 42.929688 10.304688 44.167969 9.925781 45.375 9.4375 C 44.679688 10.375 43.820313 11.175781 42.8125 11.78125 C 42.355469 12.003906 42.140625 12.53125 42.308594 13.011719 C 42.472656 13.488281 42.972656 13.765625 43.46875 13.65625 C 44.46875 13.535156 45.359375 13.128906 46.3125 12.875 C 45.457031 13.800781 44.519531 14.636719 43.5 15.375 C 43.222656 15.578125 43.070313 15.90625 43.09375 16.25 C 43.109375 16.65625 43.125 17.058594 43.125 17.46875 C 43.125 23.71875 40.726563 30.503906 36.15625 35.6875 C 31.585938 40.871094 24.875 44.5 16.09375 44.5 C 12.105469 44.5 8.339844 43.617188 4.9375 42.0625 C 9.15625 41.738281 13.046875 40.246094 16.1875 37.78125 C 16.515625 37.519531 16.644531 37.082031 16.511719 36.683594 C 16.378906 36.285156 16.011719 36.011719 15.59375 36 C 12.296875 35.941406 9.535156 34.023438 8.0625 31.3125 C 8.117188 31.3125 8.164063 31.3125 8.21875 31.3125 C 9.207031 31.3125 10.183594 31.1875 11.09375 30.9375 C 11.53125 30.808594 11.832031 30.402344 11.816406 29.945313 C 11.800781 29.488281 11.476563 29.097656 11.03125 29 C 7.472656 28.28125 4.804688 25.382813 4.1875 21.78125 C 5.195313 22.128906 6.226563 22.402344 7.34375 22.4375 C 7.800781 22.464844 8.214844 22.179688 8.355469 21.746094 C 8.496094 21.3125 8.324219 20.835938 7.9375 20.59375 C 5.5625 19.003906 4 16.296875 4 13.21875 C 4 12.078125 4.296875 11.03125 4.6875 10.03125 C 9.6875 15.519531 16.6875 19.164063 24.59375 19.5625 C 24.90625 19.578125 25.210938 19.449219 25.414063 19.210938 C 25.617188 18.96875 25.695313 18.648438 25.625 18.34375 C 25.472656 17.695313 25.375 17.007813 25.375 16.3125 C 25.375 11.414063 29.320313 7.46875 34.21875 7.46875 Z" /> </svg>
+										<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Twitter</text>
+									</button>
+									<button class="icon-google">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="#000000" viewBox="0 0 50 50" width="50px" height="50px">
+											<path d="M 26 2 C 13.308594 2 3 12.308594 3 25 C 3 37.691406 13.308594 48 26 48 C 35.917969 48 41.972656 43.4375 45.125 37.78125 C 48.277344 32.125 48.675781 25.480469 47.71875 20.9375 L 47.53125 20.15625 L 46.75 20.15625 L 26 20.125 L 25 20.125 L 25 30.53125 L 36.4375 30.53125 C 34.710938 34.53125 31.195313 37.28125 26 37.28125 C 19.210938 37.28125 13.71875 31.789063 13.71875 25 C 13.71875 18.210938 19.210938 12.71875 26 12.71875 C 29.050781 12.71875 31.820313 13.847656 33.96875 15.6875 L 34.6875 16.28125 L 41.53125 9.4375 L 42.25 8.6875 L 41.5 8 C 37.414063 4.277344 31.960938 2 26 2 Z M 26 4 C 31.074219 4 35.652344 5.855469 39.28125 8.84375 L 34.46875 13.65625 C 32.089844 11.878906 29.199219 10.71875 26 10.71875 C 18.128906 10.71875 11.71875 17.128906 11.71875 25 C 11.71875 32.871094 18.128906 39.28125 26 39.28125 C 32.550781 39.28125 37.261719 35.265625 38.9375 29.8125 L 39.34375 28.53125 L 27 28.53125 L 27 22.125 L 45.84375 22.15625 C 46.507813 26.191406 46.066406 31.984375 43.375 36.8125 C 40.515625 41.9375 35.320313 46 26 46 C 14.386719 46 5 36.609375 5 25 C 5 13.390625 14.386719 4 26 4 Z" /> </svg>
+										<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Google</text>
+									</button>
+									<button class="icon-email">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+											<path d="M0 3v18h24v-18h-24zm6.623 7.929l-4.623 5.712v-9.458l4.623 3.746zm-4.141-5.929h19.035l-9.517 7.713-9.518-7.713zm5.694 7.188l3.824 3.099 3.83-3.104 5.612 6.817h-18.779l5.513-6.812zm9.208-1.264l4.616-3.741v9.348l-4.616-5.607z" /> </svg>
+										<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Email</text>
+									</button>
+								</div>
+							</div>
+							<div class="or-text ipad-pro-or-text ipad-or-text small-d-or-text"> <span>Or Connect</span> </div>
+							<div class="col-lg-6 col-md-7 col-sm-6 col-xs-12">
+								<div class="formBox ipad-pro-formBox ipad-formBox">
+									<form>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-user"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input id="firstname" type="text" class="input ipad-input" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Name</label>
+											</div>
+										</div>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-user"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input id="firstname" type="text" class="input ipad-input" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Sure Name</label>
+											</div>
+										</div>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-phone"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input id="firstname" type="number" class="input ipad-input" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Phone</label>
+											</div>
+										</div>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-map-marker"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input id="firstname" type="text" class="input ipad-input" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Address</label>
+											</div>
+										</div>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-envelope"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input id="firstname" type="email" class="input ipad-input" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Email Address</label>
+											</div>
+										</div>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-lock"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input type="password" class="input ipad-input eye-class" id="firstname" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Password</label>
+												<div class="input-group-text eye-reg-css"> <i class="glyphicon glyphicon-eye-close" id="eye"></i> </div>
+											</div>
+										</div>
+										<div class="input-group inputBox small-d-inputBox">
+											<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-lock"></span> </button>
+											<div class="input-container ic1 small-d-ic1">
+												<input type="password" class="input ipad-input eye-class-sec-reg-conf" id="firstname" placeholder=" " />
+												<label for="firstname" class="placeholder ipad-placeholder">Check Password</label>
+												<div class="input-group-text eye-reg-css"> <i class="glyphicon glyphicon-eye-close" id="eye-sec"></i> </div>
+											</div>
+										</div>
+										<input type="submit" name="" class="button ipad-submit-btn" value="Create Account"> </form>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<hr class="reg-hr-bottom-footer">
+				<footer class="login--footer text-center reg-bottom-footer-css">
+					<p class="login--footer__text text-left"> Already have an account?
+						<br>
+						<button type="button" class="btn btn-default signin ipad-signin" id="click-on-reg" data-toggle="modal" data-target="#exampleModal-two">sign in</button>
+					</p>
+					<button type="button" class="login-and-reg-close-btn" data-dismiss="modal">Close</button>
+				</footer>
+			</div>
+		</div>
+	</div>
+	<!-- :IR end regidter form -->
+	<!-- :IR end main menu -->
+	<div class="card left-open-the-window-txt laptop-open-the-window-txt ipad-open-the-window-txt" id="left-side-toggle" style="display: block;">
+		<h5 class="first-clr-black">Hide the Window</h5> </div>
+	<div class="card left-open-the-window-txt laptop-open-the-window-txt ipad-open-the-window-txt" id="left-side-toggle-show" style="display: none;">
+		<h5 class="sec-clr-red">Open the Window</h5> </div>
+	<div class="left-sidebar-boxes-all-class"> <span id="Hide-the-Window" type="button" class="close">&times;</span>
+		<div class="card furniture-boxes-items">
+			<!--style="display: none;" -->
+			<a href="#" class="fur-box first-fur-box items" data-toggle="tooltip" title="ROOM"> <img src="images/kitchen/kitchen-one.jpeg" id="Layer_1"> </a>
+			<a href="#" class="fur-box sec-fur-box items" data-toggle="tooltip" title="CABINETS"> <img src="images/kitchen/kitchen-two.jpeg" id="Layer_1"> </a>
+			<a href="#" class="fur-box third-fur-box items" data-toggle="tooltip" title="ELEMENTS"> <img src="images/kitchen/kitchen-three.jpeg" id="Layer_1"> </a>
+			<a href="#" class="fur-box fourth-fur-box items" data-toggle="tooltip" title="SETTINGS"> <img src="images/kitchen/kitchen-four.jpeg" id="Layer_1"> </a>
+		</div>
+		<!--start kitchen section-->
+		<div class="card kitchen-items-boxes" id="kitchen-items">
+			<!--style="display: none;" -->
+			<div class="kitchen-seven-boxes wrapper">
+				<div class="banner">
+					<a href="#" class="kitchen-seven-active-boxes kitchen-first-box items"> <img src="images/kitchen/kitchen-one.jpeg" alt="kitchen design"> </a>
+					<div class="c-two-active-titl c-two-first">
+						<p>KITCHENS</p>
+					</div>
+					<a href="#" class="kitchen-seven-active-boxes kitchen-sec-box items"> <img src="images/kitchen/kitchen-two.jpeg" alt="living rooms"> </a>
+					<div class="c-two-active-titl c-two-sec">
+						<p>LIVING</p>
+					</div>
+					<a href="#" class="kitchen-seven-active-boxes kitchen-third-box items"> <img src="images/kitchen/kitchen-three.jpeg" alt="bedrooms"> </a>
+					<div class="c-two-active-titl c-two-third">
+						<p>BEDROOMS</p>
+					</div>
+					<a href="#" class="kitchen-seven-active-boxes kitchen-four-box items"> <img src="images/kitchen/kitchen-four.jpeg" alt="bathroom FURNITURE"> </a>
+					<div class="c-two-active-titl c-two-four">
+						<p>BATHROOM</p>
+					</div>
+					<a href="#" class="kitchen-seven-active-boxes kitchen-five-box items"> <img src="images/kitchen/kitchen-one.jpeg" alt="offices"> </a>
+					<div class="c-two-active-titl c-two-five">
+						<p>OFFICE</p>
+					</div>
+					<a href="#" class="kitchen-seven-active-boxes kitchen-six-box items"> <img src="images/kitchen/kitchen-two.jpeg" alt="kitchen furniture"> </a>
+					<div class="c-two-active-titl c-two-six">
+						<p>FURNITURE</p>
+					</div>
+					<a href="#" class="kitchen-seven-active-boxes kitchen-seven-box items"> <img src="images/kitchen/kitchen-three.jpeg" alt="Others options"> </a>
+					<div class="c-two-active-titl c-two-seven">
+						<p>OTHERS</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- :IR end kitchen section-->
+		<!-- :IR C3 start left 9 boxes -->
+		<div class="card left-sidebar-boxes" id="left-content-sidebar">
+			<!--style="display: none;" -->
+			<div class="left-sidebar-items">
+				<a href="#" class="left-first-box hovereffect left-box-icons items active" onclick="showHideComponent('lower-suspended-items');" data-toggle="tooltip" title="DOOR"> <img src="images/short-des-imgs/short-des-img-1.jpg" alt="Others options"> </a>
+				<a href="#" class="left-second-box hovereffect left-box-icons items" onclick="showHideComponent('component2');" data-toggle="tooltip" title="WINDOW"> <img src="images/kitchen styles/classic.png" alt="Others options"> </a>
+				<a href="#" class="left-third-box hovereffect left-box-icons items" onclick="showHideComponent('component3');" data-toggle="tooltip" title="CURTAINS / CURTAINS"> <img src="images/modern-and-comfortable-office-chair.jpg" alt="Others options"> </a>
+				<a href="#" class="left-fourth-box left-box-icons items" onclick="showHideComponent('component4');" data-toggle="tooltip" title="SOCKETS / SWITCHES"> <img src="images/sec-part-chair.png" alt="Others options"> </a>
+				<a href="#" class="left-five-box left-box-icons items" onclick="showHideComponent('component5');" data-toggle="tooltip" title="RADIATORS"> <img src="images/sofa/sofa-part-thirteenth.png" alt="Others options"> </a>
+				<a href="#" class="left-six-box left-box-icons items" onclick="showHideComponent('component6');" data-toggle="tooltip" title="WATER LEAKS / FAUCETS"> <img src="images/sofa/sofa-part-first.png" alt="Others options"> </a>
+			</div> <span id="hidebtnLeftClose" type="button" class="close">&times;</span>
+			<div class="first-left-click-box CFoursBoxes" id="CFoursBoxes1">
+				<!--style="display: none;" -->
+				<div class="float-left-eight-component"> <img src="images/first-part-chair.png" class="left-table-first-box items active" onclick="showHideImgDescr('ImagesDescription1')"> <img src="images/fourth-thumbnail.jpg" class="left-table-second-box items" onclick="showHideImgDescr('ImagesDescription2')"> <img src="images/front-first-furniture-thumbnail.png" class="left-table-third-box items"> <img src="images/sec-part-chair.png" class="left-table-fourth-box items"> <img src="images/third-part-chair.png" class="left-table-five-box items"> </div>
+				<div class="float-right-eight-component"> <img src="images/sofa/sofa-part-eight.png" class="left-table-first-box items active"> <img src="images/sofa/sofa-part-eleventh.png" class="left-table-second-box items"> <img src="images/sofa/sofa-part-fifteenth.png" class="left-table-third-box items"> <img src="images/sofa/sofa-part-ninth.png" class="left-table-fourth-box items"> <img src="images/sofa/sofa-part-sixth.png" class="left-table-five-box items"> </div>
+			</div>
+			<!-- :IR start lower suspended section-->
+			<div class="card lower-suspended-items-boxes component" id="lower-suspended-items">
+				<!--style="display: none;" -->
+				<div class="lower-suspended-four-boxes"> <span id="hidebtn" type="button" class="close">&times;</span>
+					<div class="lower-first-box lower-touch items active" onclick="showHideCFours('CFoursBoxes1')" data-toggle="tooltip" title="CLASSIC STYLE"> <img src="images/kitchen styles/classic.png" alt="classic" width="45px" height="33px"> </div>
+					<div class="lower-sec-box lower-touch items" onclick="showHideCFours('CFoursBoxes2')" data-toggle="tooltip" title="MODERN STYLE"> <img src="images/kitchen styles/modern.jpg" alt="modern" width="45px" height="33px"> </div>
+					<div class="lower-third-box lower-touch items" onclick="showHideCFours('CFoursBoxes3')" data-toggle="tooltip" title="M S (THROAT)"> <img src="images/kitchen styles/modern-throat-Kitchen.jpg" alt="modern-throat-Kitchen" width="45px" height="33px"> </div>
+					<div class="lower-four-box lower-touch items" onclick="showHideCFours('CFoursBoxes4')" data-toggle="tooltip" title="APPLIANCES"> <img src="images/kitchen styles/Appliances.png" alt="Appliances" width="45px" height="33px"> </div>
+					<div class="lower-five-box lower-touch items" onclick="showHideCFours('CFoursBoxes5')" data-toggle="tooltip" title="Others"> <img src="images/kitchen styles/Appliances.png" alt="Appliances" width="45px" height="33px"> </div>
+				</div>
+			</div>
+			<!-- :IR end lower suspended section-->
+		</div>
+		<div class="card short-description-of-imgs ImagesDescription" id="ImagesDescription1">
+			<!--style="display: none;" -->
+			<div class="short-des-img-first"> <span id="hidebtnImgDesc" type="button" class="close">&times;</span> <img src="images/short-des-imgs/short-des-img-1.jpg" alt="">
+				<div class="short-des-text">
+					<h1>Short description 1</h1> <span>Short description</span> <span>Short description</span> <span>Short description</span> </div>
+			</div>
+		</div>
+		<div class="card short-description-of-imgs ImagesDescription" id="ImagesDescription2">
+			<!--style="display: none;" -->
+			<div class="short-des-img-sec"> <span id="hidebtnImgDesc2" type="button" class="close">&times;</span> <img src="images/short-des-imgs/short-des-img-2.jpg" alt="">
+				<div class="short-des-text">
+					<h1>Short description 2</h1> <span>Short description</span> <span>Short description</span> <span>Short description</span> </div>
+			</div>
+		</div>
+		<!--:IR C3 end left 9 boxes -->
+		<!-- :IR end left sidebar -->
+		<!-- :IR start right sidebar -->
+		<div class="card right-sidebar-container" id="right-sidebar-id-close">
+			<div class="setting-close-btn" onclick="showHideItemControl('cross_clicked')">
+				<svg xmlns="http://www.w3.org/2000/svg" height="365.696pt" viewBox="0 0 365.696 365.696" width="365.696pt">
+					<path d="m243.1875 182.859375 113.132812-113.132813c12.5-12.5 12.5-32.765624 0-45.246093l-15.082031-15.082031c-12.503906-12.503907-32.769531-12.503907-45.25 0l-113.128906 113.128906-113.132813-113.152344c-12.5-12.5-32.765624-12.5-45.246093 0l-15.105469 15.082031c-12.5 12.503907-12.5 32.769531 0 45.25l113.152344 113.152344-113.128906 113.128906c-12.503907 12.503907-12.503907 32.769531 0 45.25l15.082031 15.082031c12.5 12.5 32.765625 12.5 45.246093 0l113.132813-113.132812 113.128906 113.132812c12.503907 12.5 32.769531 12.5 45.25 0l15.082031-15.082031c12.5-12.503906 12.5-32.769531 0-45.25zm0 0" /> </svg>
+			</div>
+			<div class="custom-card">
+				<div class="left-header">
+					<ul>
+						<li>Bookcase Type02</li>
+						<li>
+							<h4> 1998 &euro; </h4> </li>
+					</ul>
+				</div>
+				<div class="right-header">
+					<ul>
+						<li>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
+								<path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" /> </svg> Taxes included </li>
+						<li>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
+								<path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" /> </svg> Ships in 2-3 weeks </li>
+					</ul>
+				</div>
+				<div class="style-layout">
+					<ul>
+						<li class="style-title">
+							<label for="">Style</label>
+						</li>
+						<li class="icons-text">
+							<svg xmlns="http://www.w3.org/2000/svg" width="34" height="16" fill="currentColor" class="bi bi-layout-wtf" viewBox="0 0 16 16">
+								<path d="M5 1v8H1V1h4zM1 0a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1H1zm13 2v5H9V2h5zM9 1a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9zM5 13v2H3v-2h2zm-2-1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3zm12-1v2H9v-2h6zm-6-1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H9z" /> </svg>
+							<label for="">Slant</label>
+						</li>
+						<li class="icons-text">
+							<svg xmlns="http://www.w3.org/2000/svg" width="55" height="16" fill="currentColor" class="bi bi-grid-3x2" viewBox="0 0 16 16">
+								<path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 11.5v-8zM1.5 3a.5.5 0 0 0-.5.5V7h4V3H1.5zM5 8H1v3.5a.5.5 0 0 0 .5.5H5V8zm1 0v4h4V8H6zm4-1V3H6v4h4zm1 1v4h3.5a.5.5 0 0 0 .5-.5V8h-4zm0-1h4V3.5a.5.5 0 0 0-.5-.5H11v4z" /> </svg>
+							<label for="">Gradient</label>
+						</li>
+						<li class="icons-text">
+							<svg xmlns="http://www.w3.org/2000/svg" width="48" height="16" fill="currentColor" class="bi bi-grid-1x2" viewBox="0 0 16 16">
+								<path d="M6 1H1v14h5V1zm9 0h-5v5h5V1zm0 9v5h-5v-5h5zM0 1a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm9 0a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V1zm1 8a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-5z" /> </svg>
+							<label for="">Pattern</label>
+						</li>
+						<li class="icons-text">
+							<svg xmlns="http://www.w3.org/2000/svg" width="34" height="16" fill="currentColor" class="bi bi-grid-3x3-gap" viewBox="0 0 16 16">
+								<path d="M4 2v2H2V2h2zm1 12v-2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1zm0-5V7a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1zm0-5V2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1zm5 10v-2a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1zm0-5V7a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1zm0-5V2a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1zM9 2v2H7V2h2zm5 0v2h-2V2h2zM4 7v2H2V7h2zm5 0v2H7V7h2zm5 0h-2v2h2V7zM4 12v2H2v-2h2zm5 0v2H7v-2h2zm5 0v2h-2v-2h2zM12 1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zm-1 6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V7zm1 4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-2z" /> </svg>
+							<label for="">Grid</label>
+						</li>
+					</ul>
+				</div>
+				<div class="right-padding-decrease">
+					<div class="range-btns-density-wh">
+						<ul>
+							<li>
+								<div class="slidecontainer">
+									<label for="" class="density-label">Density</label>
+									<input type="range" min="1" max="100" value="50" class="slider" id="myRange"> </div>
+							</li>
+							<li>
+								<div class="slidecontainer">
+									<label for="" class="density-label">Width</label>
+									<input type="range" min="1" max="100" value="30" class="slider" id="myRange"> </div>
+							</li>
+							<li>
+								<div class="slidecontainer">
+									<label for="" class="density-label">Height</label>
+									<input type="range" min="1" max="100" value="0" class="slider" id="myRange"> </div>
+							</li>
+						</ul>
+					</div>
+					<div class="Depth-range">
+						<ul>
+							<li>
+								<label for="" class="Depth-label">Depth</label>
+							</li>
+							<li>
+								<div class="depth-main-btn">
+									<button class="depth-sub-btn">24cm</button>
+									<button class="depth-sub-btn">32cm</button>
+									<button class="depth-sub-btn depth-sub-btn-last">40cm</button>
+								</div>
+							</li>
+							<li class="Depth-quest">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
+									<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+									<path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z" /> </svg>
+							</li>
+						</ul>
+					</div>
+					<div class="back-panels-layout">
+						<ul>
+							<li>
+								<label for="" class="back-panels-label">BackPanels</label>
+							</li>
+							<li>
+								<div>
+									<button>OFF</button>
+									<button>ON</button>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
+										<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+										<path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z" /> </svg>
+								</div>
+							</li>
+						</ul>
+					</div>
+					<div class="color-layout">
+						<ul>
+							<li>
+								<label for="" class="color-label">Color</label>
+							</li>
+							<li>
+								<ul>
+									<li>
+										<div class="color-radius-border"></div>
+									</li>
+									<li>
+										<div class="color-radius-border"></div>
+									</li>
+									<li>
+										<div class="color-radius-border"></div>
+									</li>
+									<li>
+										<div class="color-radius-border"></div>
+									</li>
+									<li>
+										<div class="color-radius-border"></div>
+									</li>
+									<li>new</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- :IR end right sidebar -->
+	</div>
+	<div class="card right-box-for-all"> <span id="right-Hide-and-open-the-Window" type="button" class="close">&times;</span> </div>
+	<!-- projects -->
+	<div class="first-left-click-box" id="projects-ID" style="display: none;"> <span class="project-dragable-icon"><i class="glyphicon glyphicon-move"></i></span> <span id="hide-project-Close" type="button" class="projectclose">&times;</span>
+		<div class="float-left-eight-component"> <img src="images/first-part-chair.png" class="first-projects-component"> <img src="images/fourth-thumbnail.jpg" class="second-projects-component"> <img src="images/front-first-furniture-thumbnail.png" class="third-projects-component"> <img src="images/sec-part-chair.png" class="four-projects-component"> <img src="images/third-part-chair.png" class="five-projects-component"> </div>
+		<div class="float-right-eight-component"> <img src="images/sofa/sofa-part-eight.png" class="six-projects-component"> <img src="images/sofa/sofa-part-eleventh.png" class="seven-projects-component"> <img src="images/sofa/sofa-part-fifteenth.png" class="eight-projects-component"> <img src="images/sofa/sofa-part-ninth.png" class="nine-projects-component"> <img src="images/sofa/sofa-part-sixth.png" class="ten-projects-component"> </div>
+	</div>
+</div>
+			<!-- 2d page -->
+			<!-- :IR start top header -->
+			<div class="two-D" id="2d-page-views" style="display: block;">
+				<div class="card text-for-add">
+					<div class="dummy-text">dummy-text.............</div>
+				</div>
+				<!-- :IR logo main menu -->
+				<div class="card site-logo"> <img src="images/logo/logo.svg" alt=""> </div>
+				<!-- :IR start top right header -->
+				<div class="card top-right-header">
+					<div class="btn-group" role="group">
+						<button type="button" class="btn" title="Left-arrow"><span class="glyphicon glyphicon-arrow-left"></span></button>
+						<button type="button" class="btn" title="Right-arrow"><span class="glyphicon glyphicon-arrow-right"></span></button>
+					</div>
+					<div class="btn-group" role="group">
+						<button type="button" class="btn"><i class="glyphicon glyphicon-floppy-save" title="save"></i></button>
+						<button type="button" class="btn" title="new project"><span class="glyphicon glyphicon-file"></span></button>
+						<div class="btn-group removed-border-from-dropdowns project-id-time-duration-2d" id="project-id-time-duration">
+							<button type="button" class="btn dropdown-toggle" data-toggle="dropdown" title="upload project"> <i class="glyphicon glyphicon-upload"></i> <span class="caret"></span></button>
+							
+						</div>
+						<button type="button" class="btn two-d-view" id="test-for-3d-view" title="click and go 3d view">3D</button>
+					</div>
+					<div class="btn-group" role="group">
+						<button type="button" class="btn"><i class="glyphicon glyphicon-shopping-cart" title="shopping-cart"></i></button>
+						<div class="btn-group removed-border-from-dropdowns" id="currency-id">
+							<button type="button" class="btn dropdown-toggle" data-toggle="dropdown" title="Currency"> 1266 <i class="glyphicon glyphicon-euro currency-icons-size"></i> <span class="caret"></span> </button>
+							<ul class="dropdown-menu currency-dropdown-menu" role="menu">
+								<li><a href="#" title="dollar" class="currency-icons-size">&#36;</a></li>
+								<li><a href="#" title="cent" class="currency-icons-size">&#162;</a></li>
+								<li><a href="#" title="pound" class="currency-icons-size">&#163;</a></li>
+								<li><a href="#" title="yen" class="currency-icons-size">&#165;</a></li>
+								<li><a href="#" title="franc" class="currency-icons-size">&#8355;</a></li>
+								<li><a href="#" title="lira" class="currency-icons-size">&#8356;</a></li>
+								<li><a href="#" title="peseta" class="currency-icons-size">&#8359;</a></li>
+								<li><a href="#" title="pound" class="currency-icons-size">&#128;</a></li>
+								<li><a href="#" title="euro" class="currency-icons-size">&#165;</a></li>
+								<li><a href="#" title="rupee" class="currency-icons-size">&#x20B9;</a></li>
+								<li><a href="#" title="won" class="currency-icons-size">&#8361;</a></li>
+								<li><a href="#" title="hryvnia" class="currency-icons-size">&#8372;</a></li>
+								<li><a href="#" title="drachma" class="currency-icons-size">&#8367;</a></li>
+								<li><a href="#" title="tugrik" class="currency-icons-size">&#8366;</a></li>
+								<li><a href="#" title="german" class="currency-icons-size">&#8368;</a></li>
+								<li><a href="#" title="guarani" class="currency-icons-size">&#8370;</a></li>
+								<li><a href="#" title="peso" class="currency-icons-size">&#8369;</a></li>
+								<li><a href="#" title="austral" class="currency-icons-size">&#8371;</a></li>
+								<li><a href="#" title="cedi" class="currency-icons-size">&#8373;</a></li>
+								<li><a href="#" title="kip" class="currency-icons-size">&#8365;</a></li>
+								<li><a href="#" title="new sheqel" class="currency-icons-size">&#8362;</a></li>
+								<li><a href="#" title="dong" class="currency-icons-size">&#8363;</a></li>
+							</ul>
+						</div>
+						<button type="button" class="btn reduced-price currency-icons-size"> 1566 &#128;</button>
+					</div>
+					<div class="btn-group btns-float-right" role="group">
+						<button type="button" class="btn" onclick="openFullscreen();"><span class="glyphicon glyphicon-fullscreen" title="full screen"></span></button>
+						<button type="button" class="btn"><i class="glyphicon glyphicon-cog" title="settings"></i></button>
+						<button type="button" data-toggle="modal" data-target="#exampleModal-2d" class="btn login-btn-left-side"> <i class="glyphicon glyphicon-log-in"></i>
+							<p>login</p>
+						</button>
+						<button type="button" data-toggle="modal" data-target="#exampleModal-two-3d" class="btn login-btn-end-side"> <i class="glyphicon glyphicon-registration-mark"></i>
+							<p>register</p>
+						</button>
+						<div class="btn-group removed-border-from-dropdowns first-dropdown-btns-float-right">
+							<button type="button" class="btn dropdown-toggle text-sm-icons-lg" data-toggle="dropdown">
+								<p>eng</p> <span class="caret"></span> </button>
+							<ul class="dropdown-menu lng-dropdown-menu" role="menu">
+								<li><a href="#">English</a></li>
+								<li><a href="#">Spanish</a></li>
+								<li><a href="#">Franches</a></li>
+							</ul>
+						</div>
+						<div class="btn-group removed-border-from-dropdowns sec-dropdown-btns-float-right">
+							<button type="button" class="btn dropdown-toggle text-sm-icons-lg" data-toggle="dropdown">
+								<p>cm</p> <span class="caret"></span> </button>
+							<ul class="dropdown-menu measure-dropdown-menu" role="menu">
+								<li><a href="#">cm</a></li>
+								<li><a href="#">mm</a></li>
+								<li><a href="#">m</a></li>
+								<li><a href="#">km</a></li>
+							</ul>
+						</div>
+						<button type="button" class="btn"><i class="glyphicon glyphicon-question-sign" title="any help"></i></button>
+					</div>
+				</div>
+				<!-- :IR end top header -->
+				<!-- :IR start login form -->
+				<div class="modal fade oursforms-login" id="exampleModal-2d" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+					<div class="modal-dialog" role="document">
+						<div class="modal-content">
+							<div class="modal-body">
+								<div class="card login-page">
+									<div class="login login-1" id="first">
+										<header class="login--header login-1--header text-center"> <span class="icon icon-medium glyphicon glyphicon-user"></span>
+											<h3>login</h3> <span class="arrow-down login--header__arrow"></span> </header>
+										<form class="login--form">
+											<div class="login--form__input-area input-group"> <span class="input-group-addon">
+												<span class="glyphicon glyphicon-user"></span> </span>
+												<input type="email" class="form-control" placeholder="email" /> </div>
+											<div class="login--form__input-area input-group"> <span class="input-group-addon">
+												<span class="glyphicon glyphicon-lock"></span> </span>
+												<input id="password-field" type="password" class="form-control eye-class-2d" name="password" placeholder="password"> <span class="fa-fw glyphicon glyphicon-eye-close field-icon" id="eye-2d"></span> </div>
+											<div class="login--form__input-area unstyled centered">
+												<input class="styled-checkbox" id="styled-checkbox-1" type="checkbox" value="value1" />
+												<label for="styled-checkbox-1">Remember me?</label>
+											</div>
+											<button type="button" class="login--form__button btn btn-default" value="submit">sign in</button>
+										</form>
+										<footer class="login--footer text-center">
+											<button type="button" class="btn btn-default" value="submit" id="password-recovery">Have you forgotten the password?</button>
+											<p class="login--footer__text">Or you can login with one of the following</p>
+											<div class="login--footer__social-buttons">
+												<a href="#"> <span class="icon icon-small icon-fb">
+													<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-facebook" viewBox="0 0 16 16">
+														<path
+															d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"
+															/>
+													</svg>
+												</span> </a>
+												<a href="#"> <span class="icon icon-small icon-tw">
+													<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter" viewBox="0 0 16 16">
+														<path
+															d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"
+															/>
+													</svg>
+												</span> </a>
+												<a href="#"> <span class="icon icon-small icon-gp">
+													<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google-plus-g" class="svg-inline--fa fa-google-plus-g" role="img" viewBox="0 0 640 512">
+														<path
+															fill="currentColor"
+															d="M386.061 228.496c1.834 9.692 3.143 19.384 3.143 31.956C389.204 370.205 315.599 448 204.8 448c-106.084 0-192-85.915-192-192s85.916-192 192-192c51.864 0 95.083 18.859 128.611 50.292l-52.126 50.03c-14.145-13.621-39.028-29.599-76.485-29.599-65.484 0-118.92 54.221-118.92 121.277 0 67.056 53.436 121.277 118.92 121.277 75.961 0 104.513-54.745 108.965-82.773H204.8v-66.009h181.261zm185.406 6.437V179.2h-56.001v55.733h-55.733v56.001h55.733v55.733h56.001v-55.733H627.2v-56.001h-55.733z"
+															/>
+													</svg>
+												</span> </a>
+											</div>
+											<p class="login--footer__text text-center"> dont have an account? </p>
+											<button class="btn btn-default" type="button" id="click-on-login-2d" data-toggle="modal" data-target="#exampleModal-2d">Create Account</button>
+											<br>
+											<button type="button" class="login-and-reg-close-btn" data-dismiss="modal"> Close </button>
+										</footer>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- :IR end login form -->
+				<!-- :IR start register form -->
+				<div class="modal fade oursforms-reg" id="exampleModal-two-3d" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+					<div class="modal-dialog mobile-modal-dialog" role="document">
+						<div class="modal-content">
+							<div class="modal-body">
+								<div class="row">
+									<div class="card background register-form">
+										<div class="col-lg-6 col-md-5 col-sm-6 col-xs-12">
+											<div class="input-group formBox-socials ipad-pro-formBox-socials ipad-formBox-socials small-d-formBox-socials">
+												<button class="icon-facebook">
+													<svg xmlns="http://www.w3.org/2000/svg" fill="#000000" viewBox="0 0 30 30" width="30px" height="30px">
+														<path d="M12,27V15H8v-4h4V8.852C12,4.785,13.981,3,17.361,3c1.619,0,2.475,0.12,2.88,0.175V7h-2.305C16.501,7,16,7.757,16,9.291V11 h4.205l-0.571,4H16v12H12z" /> </svg>
+													<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Facebook</text>
+												</button>
+												<button class="icon-twitter">
+													<svg xmlns="http://www.w3.org/2000/svg" fill="#000000" viewBox="0 0 50 50" width="50px" height="50px">
+														<path d="M 34.21875 5.46875 C 28.238281 5.46875 23.375 10.332031 23.375 16.3125 C 23.375 16.671875 23.464844 17.023438 23.5 17.375 C 16.105469 16.667969 9.566406 13.105469 5.125 7.65625 C 4.917969 7.394531 4.597656 7.253906 4.261719 7.277344 C 3.929688 7.300781 3.632813 7.492188 3.46875 7.78125 C 2.535156 9.386719 2 11.234375 2 13.21875 C 2 15.621094 2.859375 17.820313 4.1875 19.625 C 3.929688 19.511719 3.648438 19.449219 3.40625 19.3125 C 3.097656 19.148438 2.726563 19.15625 2.425781 19.335938 C 2.125 19.515625 1.941406 19.839844 1.9375 20.1875 L 1.9375 20.3125 C 1.9375 23.996094 3.84375 27.195313 6.65625 29.15625 C 6.625 29.152344 6.59375 29.164063 6.5625 29.15625 C 6.21875 29.097656 5.871094 29.21875 5.640625 29.480469 C 5.410156 29.742188 5.335938 30.105469 5.4375 30.4375 C 6.554688 33.910156 9.40625 36.5625 12.9375 37.53125 C 10.125 39.203125 6.863281 40.1875 3.34375 40.1875 C 2.582031 40.1875 1.851563 40.148438 1.125 40.0625 C 0.65625 40 0.207031 40.273438 0.0507813 40.71875 C -0.109375 41.164063 0.0664063 41.660156 0.46875 41.90625 C 4.980469 44.800781 10.335938 46.5 16.09375 46.5 C 25.425781 46.5 32.746094 42.601563 37.65625 37.03125 C 42.566406 31.460938 45.125 24.226563 45.125 17.46875 C 45.125 17.183594 45.101563 16.90625 45.09375 16.625 C 46.925781 15.222656 48.5625 13.578125 49.84375 11.65625 C 50.097656 11.285156 50.070313 10.789063 49.777344 10.445313 C 49.488281 10.101563 49 9.996094 48.59375 10.1875 C 48.078125 10.417969 47.476563 10.441406 46.9375 10.625 C 47.648438 9.675781 48.257813 8.652344 48.625 7.5 C 48.75 7.105469 48.613281 6.671875 48.289063 6.414063 C 47.964844 6.160156 47.511719 6.128906 47.15625 6.34375 C 45.449219 7.355469 43.558594 8.066406 41.5625 8.5 C 39.625 6.6875 37.074219 5.46875 34.21875 5.46875 Z M 34.21875 7.46875 C 36.769531 7.46875 39.074219 8.558594 40.6875 10.28125 C 40.929688 10.53125 41.285156 10.636719 41.625 10.5625 C 42.929688 10.304688 44.167969 9.925781 45.375 9.4375 C 44.679688 10.375 43.820313 11.175781 42.8125 11.78125 C 42.355469 12.003906 42.140625 12.53125 42.308594 13.011719 C 42.472656 13.488281 42.972656 13.765625 43.46875 13.65625 C 44.46875 13.535156 45.359375 13.128906 46.3125 12.875 C 45.457031 13.800781 44.519531 14.636719 43.5 15.375 C 43.222656 15.578125 43.070313 15.90625 43.09375 16.25 C 43.109375 16.65625 43.125 17.058594 43.125 17.46875 C 43.125 23.71875 40.726563 30.503906 36.15625 35.6875 C 31.585938 40.871094 24.875 44.5 16.09375 44.5 C 12.105469 44.5 8.339844 43.617188 4.9375 42.0625 C 9.15625 41.738281 13.046875 40.246094 16.1875 37.78125 C 16.515625 37.519531 16.644531 37.082031 16.511719 36.683594 C 16.378906 36.285156 16.011719 36.011719 15.59375 36 C 12.296875 35.941406 9.535156 34.023438 8.0625 31.3125 C 8.117188 31.3125 8.164063 31.3125 8.21875 31.3125 C 9.207031 31.3125 10.183594 31.1875 11.09375 30.9375 C 11.53125 30.808594 11.832031 30.402344 11.816406 29.945313 C 11.800781 29.488281 11.476563 29.097656 11.03125 29 C 7.472656 28.28125 4.804688 25.382813 4.1875 21.78125 C 5.195313 22.128906 6.226563 22.402344 7.34375 22.4375 C 7.800781 22.464844 8.214844 22.179688 8.355469 21.746094 C 8.496094 21.3125 8.324219 20.835938 7.9375 20.59375 C 5.5625 19.003906 4 16.296875 4 13.21875 C 4 12.078125 4.296875 11.03125 4.6875 10.03125 C 9.6875 15.519531 16.6875 19.164063 24.59375 19.5625 C 24.90625 19.578125 25.210938 19.449219 25.414063 19.210938 C 25.617188 18.96875 25.695313 18.648438 25.625 18.34375 C 25.472656 17.695313 25.375 17.007813 25.375 16.3125 C 25.375 11.414063 29.320313 7.46875 34.21875 7.46875 Z" /> </svg>
+													<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Twitter</text>
+												</button>
+												<button class="icon-google">
+													<svg xmlns="http://www.w3.org/2000/svg" fill="#000000" viewBox="0 0 50 50" width="50px" height="50px">
+														<path d="M 26 2 C 13.308594 2 3 12.308594 3 25 C 3 37.691406 13.308594 48 26 48 C 35.917969 48 41.972656 43.4375 45.125 37.78125 C 48.277344 32.125 48.675781 25.480469 47.71875 20.9375 L 47.53125 20.15625 L 46.75 20.15625 L 26 20.125 L 25 20.125 L 25 30.53125 L 36.4375 30.53125 C 34.710938 34.53125 31.195313 37.28125 26 37.28125 C 19.210938 37.28125 13.71875 31.789063 13.71875 25 C 13.71875 18.210938 19.210938 12.71875 26 12.71875 C 29.050781 12.71875 31.820313 13.847656 33.96875 15.6875 L 34.6875 16.28125 L 41.53125 9.4375 L 42.25 8.6875 L 41.5 8 C 37.414063 4.277344 31.960938 2 26 2 Z M 26 4 C 31.074219 4 35.652344 5.855469 39.28125 8.84375 L 34.46875 13.65625 C 32.089844 11.878906 29.199219 10.71875 26 10.71875 C 18.128906 10.71875 11.71875 17.128906 11.71875 25 C 11.71875 32.871094 18.128906 39.28125 26 39.28125 C 32.550781 39.28125 37.261719 35.265625 38.9375 29.8125 L 39.34375 28.53125 L 27 28.53125 L 27 22.125 L 45.84375 22.15625 C 46.507813 26.191406 46.066406 31.984375 43.375 36.8125 C 40.515625 41.9375 35.320313 46 26 46 C 14.386719 46 5 36.609375 5 25 C 5 13.390625 14.386719 4 26 4 Z" /> </svg>
+													<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Google</text>
+												</button>
+												<button class="icon-email">
+													<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+														<path d="M0 3v18h24v-18h-24zm6.623 7.929l-4.623 5.712v-9.458l4.623 3.746zm-4.141-5.929h19.035l-9.517 7.713-9.518-7.713zm5.694 7.188l3.824 3.099 3.83-3.104 5.612 6.817h-18.779l5.513-6.812zm9.208-1.264l4.616-3.741v9.348l-4.616-5.607z" /> </svg>
+													<text fill="#ffffff" x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" font-size="48">Connect With Email</text>
+												</button>
+											</div>
+										</div>
+										<div class="or-text ipad-pro-or-text ipad-or-text small-d-or-text"> <span>Or Connect</span> </div>
+										<div class="col-lg-6 col-md-7 col-sm-6 col-xs-12">
+											<div class="formBox ipad-pro-formBox ipad-formBox">
+												<form>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-user"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input id="firstname" type="text" class="input ipad-input" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Name</label>
+														</div>
+													</div>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-user"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input id="firstname" type="text" class="input ipad-input" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Sure Name</label>
+														</div>
+													</div>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-phone"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input id="firstname" type="number" class="input ipad-input" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Phone</label>
+														</div>
+													</div>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-map-marker"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input id="firstname" type="text" class="input ipad-input" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Address</label>
+														</div>
+													</div>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-envelope"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input id="firstname" type="email" class="input ipad-input" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Email Address</label>
+														</div>
+													</div>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-lock"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input type="password" class="input ipad-input eye-class" id="firstname" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Password</label>
+															<div class="input-group-text eye-reg-css"> <i class="glyphicon glyphicon-eye-close" id="eye"></i> </div>
+														</div>
+													</div>
+													<div class="input-group inputBox small-d-inputBox">
+														<button type="button" class="btn btn-default btn-sm btn-reg-icons small-d-btn-reg-icons"> <span class="glyphicon glyphicon-lock"></span> </button>
+														<div class="input-container ic1 small-d-ic1">
+															<input type="password" class="input ipad-input eye-class-sec-reg-conf" id="firstname" placeholder=" " />
+															<label for="firstname" class="placeholder ipad-placeholder">Check Password</label>
+															<div class="input-group-text eye-reg-css"> <i class="glyphicon glyphicon-eye-close" id="eye-sec"></i> </div>
+														</div>
+													</div>
+													<input type="submit" name="" class="button ipad-submit-btn" value="Create Account"> </form>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<hr class="reg-hr-bottom-footer">
+							<footer class="login--footer text-center reg-bottom-footer-css">
+								<p class="login--footer__text text-left"> Already have an account?
+									<br>
+									<button type="button" class="btn btn-default signin ipad-signin" id="click-on-reg-3d" data-toggle="modal" data-target="#exampleModal-two-3d">sign in</button>
+								</p>
+								<button type="button" class="login-and-reg-close-btn" data-dismiss="modal">Close</button>
+							</footer>
+						</div>
+					</div>
+				</div>
+				<!-- :IR end regidter form -->
+				<!-- :IR end main menu -->
+				<div class="card left-open-the-window-txt-2d laptop-open-the-window-txt-2d ipad-open-the-window-txt-2d" id="left-side-toggle-2d" style="display: block;">
+					<h5 class="first-clr-black-2d">Hide the Window</h5> </div>
+				<div class="card left-open-the-window-txt-2d laptop-open-the-window-txt-2d ipad-open-the-window-txt-2d" id="left-side-toggle-show-2d" style="display: none;">
+					<h5 class="sec-clr-red-2d">Open the Window</h5> </div>
+				<div class="left-sidebar-boxes-all-class-2d"> <span id="Hide-the-Window-2d" type="button" class="close">&times;</span>
+					<div class="card diff-rooms-boxes-items-2d">
+						<!--style="display: none;" -->
+						<img src="images/kitchen/kitchen-one.jpeg" id="Layer_1"  class="fur-box first-fur-box items" data-toggle="tooltip" title="first ROOM">
+						<img src="images/kitchen/kitchen-two.jpeg" id="Layer_1" class="fur-box sec-fur-box items" data-toggle="tooltip" title="second ROOM">
+						<img src="images/kitchen/kitchen-three.jpeg" id="Layer_1" class="fur-box third-fur-box items" data-toggle="tooltip" title="third ROOM">
+						<img src="images/kitchen/kitchen-four.jpeg" id="Layer_1" class="fur-box fourth-fur-box items" data-toggle="tooltip" title="fourth ROOM">
+					</div>
+	
+					<!-- :IR end left sidebar -->
+				</div>
+				<div class="card right-box-for-all"> <span id="right-Hide-and-open-the-Window" type="button" class="close">&times;</span> </div>
+				<!-- projects -->
+				<div class="first-left-click-box" id="projects-ID-2d" style="display: none;"> <span class="project-dragable-icon"><i class="glyphicon glyphicon-move"></i></span> <span id="hide-project-Close-2d" type="button" class="projectclose hide-project-Close-2d">&times;</span>
+					<div class="float-left-eight-component"> <img src="images/first-part-chair.png" class="first-projects-component"> <img src="images/fourth-thumbnail.jpg" class="second-projects-component"> <img src="images/front-first-furniture-thumbnail.png" class="third-projects-component"> <img src="images/sec-part-chair.png" class="four-projects-component"> <img src="images/third-part-chair.png" class="five-projects-component"> </div>
+					<div class="float-right-eight-component"> <img src="images/sofa/sofa-part-eight.png" class="six-projects-component"> <img src="images/sofa/sofa-part-eleventh.png" class="seven-projects-component"> <img src="images/sofa/sofa-part-fifteenth.png" class="eight-projects-component"> <img src="images/sofa/sofa-part-ninth.png" class="nine-projects-component"> <img src="images/sofa/sofa-part-sixth.png" class="ten-projects-component"> </div>
+				</div>
+				<!-- IR end class for all right  sidebar -->
+			</div>  
+			<div id='interface-controls'>
+				<button id="showFloorPlan" class="btn btn-sm btn-default active" title="Edit 2D floorplan">	<span class="glyphicon glyphicon-move"></span> Floor Plan</button>
+				<button id="showDesign" class="btn btn-sm btn-default" title="Edit 3D floorplan">	<span class="glyphicon glyphicon-move"></span> 3D</button>
+				<!-- <div class="btn-group-vertical" id='viewcontrols'>
+					<div class="btn btn-sm btn-default">
+						<a class="btn btn-default bottom" href="#" id="leftview" title="Show side view (left)"> <span class="glyphicon glyphicon glyphicon-object-align-left"></span>
+						</a> 
+						<span class="btn-group-vertical">
+							<a class="btn btn-default" href="#" id="topview" title="Show top view">
+								<span class="glyphicon glyphicon glyphicon-object-align-horizontal"></span>
+						</a>
+						<a class="btn btn-default" href="#" id="isometryview" title="Show 3d view"> <span class="glyphicon glyphicon glyphicon-inbox"></span>
+						</a>
+						<a class="btn btn-default" href="#" id="frontview" title="Show front view"> <span class="glyphicon glyphicon glyphicon-object-align-vertical"></span>
+						</a>
+						</span>
+						<a class="btn btn-default bottom" href="#" id="rightview" title="Show side view (right)"> <span class="glyphicon glyphicon glyphicon-object-align-right"></span>
+						</a>
+					</div>
+					<button id="showSwitchCameraMode" class="btn btn-sm btn-default" title="Switch Camera ortho/perspective">	<span class="glyphicon glyphicon-camera">
+					</button>
+					<button id="showSwitchWireframeMode" class="btn btn-sm btn-default" title="Switch wireframe mode">	<span class="glyphicon glyphicon-pencil"></span>
+					</button>
+					</div> -->
+				<button id="showAddItems" class="btn btn-sm btn-default" data-toggle="modal" data-target="#add-items-modal" title="Add/Remove items in 3D">	<span class="glyphicon glyphicon-plus"></span>
+				</button>
+				
+				</div>
+				<!-- Add Items -->
+				<div class="modal fade" id="add-items-modal" role="dialog">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">Furniture Inventory</h4>
+						</div>
+						<div class="modal-body">
+							<div id="add-items" class="panel-group">
+							<div id="floor-items" class="panel panel-default">
+								<div id="floor-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#floor-items-body">Floor Items</a></h4>
+								</div>
+								<div id="floor-items-body" class="panel-collapse collapse in inventory-content">
+									<div class="row panel-body" id="floor-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							<div id="wall-items" class="panel panel-default">
+								<div id="wall-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#wall-items-body">Wall Items</a></h4>
+								</div>
+								<div id="wall-items-body" class="panel-collapse collapse inventory-content">
+									<div class="row panel-body" id="wall-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							<div id="in-wall-items" class="panel panel-default">
+								<div id="in-wall-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#in-wall-items-body">In Wall Items</a></h4>
+								</div>
+								<div id="in-wall-items-body" class="panel-collapse collapse inventory-content">
+									<div class="row panel-body" id="in-wall-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							<div id="in-wall-floor-items" class="panel panel-default">
+								<div id="in-wall-floor-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#in-wall-floor-items-body">In Wall Floor Items</a></h4>
+								</div>
+								<div id="in-wall-floor-items-body" class="panel-collapse collapse inventory-content">
+									<div class="row panel-body" id="in-wall-floor-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							<div id="on-floor-items" class="panel panel-default">
+								<div id="on-floor-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#on-floor-items-body">On Floor Items</a></h4>
+								</div>
+								<div id="on-floor-items-body" class="panel-collapse collapse inventory-content">
+									<div class="row panel-body" id="on-floor-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							<div id="wall-floor-items" class="panel panel-default">
+								<div id="wall-floor-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#wall-floor-items-body">Wall-Floor Items</a></h4>
+								</div>
+								<div id="wall-floor-items-body" class="panel-collapse collapse inventory-content">
+									<div class="row panel-body" id="wall-floor-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							<div id="roof-items" class="panel panel-default">
+								<div id="roof-items-header" class="panel-heading">
+									<h4 class="panel-title"><a data-toggle="collapse" data-parent="#add-items" href="#roof-items-body">Roof Items</a></h4>
+								</div>
+								<div id="roof-items-body" class="panel-collapse collapse inventory-content">
+									<div class="row panel-body" id="roof-items-wrapper">
+										<!-- Items added here by items.js -->
+									</div>
+								</div>
+							</div>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+				</div>
+	</div>
+	<script>
+// 3d page
+$("#showDesign").click(function() {
+	$(".three-D").toggle(300);
+    $(".two-D").hide(300);
+});
+$("#showFloorPlan").click(function() {
+	$(".two-D").toggle(300);
+    $(".three-D").hide(300);
+});
+		// menu l-r-t-b-c-menu
+		$("#l-r-t-b-c-menu").click(function() {
+    $("#l-r-t-b-c-drop-down-menu").toggle(300);
+    $(".projects-dropdown-menu").hide(300);
+    $(".currency-dropdown-menu").hide(300);
+    $(".measure-dropdown-menu").hide(300);
+    $(".lng-dropdown-menu").hide(300);
+});
+
+$(".l-r-t-b-c-close-btn").click(function() {
+    $("#l-r-t-b-c-drop-down-menu").toggle(300);
+    $(".projects-dropdown-menu").hide(300);
+    $(".currency-dropdown-menu").hide(300);
+    $(".measure-dropdown-menu").hide(300);
+    $(".lng-dropdown-menu").hide(300);
+});
+
+$(document).ready(function() {
+    $(".top-right-header .btn").click(function() {
+        $(".top-right-header .btn").removeClass("active");
+        $(this).addClass("active");
+    });
+    $(".top-right-header a .btn").click(function() {
+        $(".top-right-header a .btn").removeClass("active");
+        $(this).addClass("active");
+    });
+});
+
+// on drop down add duration time
+$(".top-right-header .first-dropdown-btns-float-right").click(function() {
+    $(".lng-dropdown-menu").toggle(300);
+    $("#l-r-t-b-c-drop-down-menu").hide(300);
+    $(".projects-dropdown-menu").hide(300);
+    $(".currency-dropdown-menu").hide(300);
+    $(".measure-dropdown-menu").hide(300);
+});
+$(".top-right-header .sec-dropdown-btns-float-right").click(function() {
+    $(".measure-dropdown-menu").toggle(300);
+    $("#l-r-t-b-c-drop-down-menu").hide(300);
+    $(".projects-dropdown-menu").hide(300);
+    $(".currency-dropdown-menu").hide(300);
+    $(".lng-dropdown-menu").hide(300);
+});
+
+$(".top-right-header #project-id-time-duration").click(function() {
+    $(".projects-dropdown-menu").toggle(300);
+    $("#l-r-t-b-c-drop-down-menu").hide(300);
+    $(".currency-dropdown-menu").hide(300);
+    $(".measure-dropdown-menu").hide(300);
+    $(".lng-dropdown-menu").hide(300);
+});
+
+$(".top-right-header #currency-id").click(function() {
+    $(".currency-dropdown-menu").toggle(300);
+    $("#l-r-t-b-c-drop-down-menu").hide(300);
+    $(".projects-dropdown-menu").hide(300);
+    $(".measure-dropdown-menu").hide(300);
+    $(".lng-dropdown-menu").hide(300);
+});
+
+$(document).ready(function() {
+    $(".left-open-the-window-txt-2d").click(function() {
+        $(".left-sidebar-boxes-all-class-2d").animate({
+            width: "toggle"
+        });
+    });
+});
+
+$(document).ready(function() {
+    $(".left-open-the-window-txt").click(function() {
+        $(".left-sidebar-boxes-all-class").animate({
+            width: "toggle"
+        });
+    });
+});
+
+
+$(document).ready(function() {
+    $("#Hide-the-Window-2d").click(function() {
+        $(".left-sidebar-boxes-all-class-2d").animate({
+            width: "toggle"
+        });
+    });
+});
+
+
+$(document).ready(function() {
+    $("#Hide-the-Window").click(function() {
+        $(".left-sidebar-boxes-all-class").animate({
+            width: "toggle"
+        });
+    });
+});
+
+// hide and show right sidebar
+$(document).ready(function() {
+    $("#right-Hide-and-open-the-Window").click(function() {
+        $(".right-box-for-all").animate({
+            width: "toggle"
+        });
+    });
+});
+
+$(document).ready(function() {
+    $(".left-table-first-box").click(function() {
+        $(".right-box-for-all").animate({
+            width: "toggle"
+        });
+    });
+});
+
+$(document).ready(function() {
+    $("#left-side-toggle-show-2d").click(function() {
+        $("#left-side-toggle-show-2d").toggleClass("main");
+        $("#left-side-toggle-2d").show();
+        $("#left-side-toggle-show-2d").hide();
+    });
+    $("#left-side-toggle-2d").click(function() {
+        $("#left-side-toggle-show-2d").toggleClass("main");
+        $("#left-side-toggle-show-2d").show();
+        $("#left-side-toggle-2d").hide();
+    });
+	$("#Hide-the-Window-2d").click(function() {
+        $("#left-side-toggle-show-2d").toggleClass("main");
+        $("#left-side-toggle-show-2d").show();
+        $("#left-side-toggle-2d").hide();
+    });
+
+	$("#left-side-toggle-show").click(function() {
+        $("#left-side-toggle-show").toggleClass("main");
+        $("#left-side-toggle").show();
+        $("#left-side-toggle-show").hide();
+    });
+    $("#left-side-toggle").click(function() {
+        $("#left-side-toggle-show").toggleClass("main");
+        $("#left-side-toggle-show").show();
+        $("#left-side-toggle").hide();
+    });
+	$("#Hide-the-Window").click(function() {
+        $("#left-side-toggle-show").toggleClass("main");
+        $("#left-side-toggle-show").show();
+        $("#left-side-toggle").hide();
+    });
+
+});
+//  modal show hide toggle
+$('#click-on-reg').click(function() {
+    $('#exampleModal').modal('toggle');
+});
+$('#click-on-login').click(function() {
+    $('#exampleModal-two').modal('toggle');
+});
+//  2d modal show hide toggle
+$('#click-on-reg-3d').click(function() {
+    $('#exampleModal-2d').modal('toggle');
+});
+$('#click-on-login-2d').click(function() {
+    $('#exampleModal-two-3d').modal('toggle');
+});
+// projects toggle btn
+$('#project-id-time-duration').click(function() {
+    $('#projects-ID').toggle();
+});
+$('#hide-project-Close').click(function() {
+    $('#projects-ID').toggle();
+});
+$('.project-id-time-duration-2d').click(function() {
+    $('#projects-ID-2d').toggle();
+});
+$('.hide-project-Close-2d').click(function() {
+    $('#projects-ID-2d').toggle();
+});
+// open and exit full screen
+var elem = document.documentElement;
+
+function openFullscreen() {
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        /* Safari */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+        /* IE11 */
+        elem.msRequestFullscreen();
+    }
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        /* Safari */
+        document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+        /* IE11 */
+        document.msExitFullscreen();
+    }
+}
+
+// login toggle eye
+
+$(function() {
+
+$('#exampleModal #eye-3d').click(function() {
+
+	if ($(this).hasClass('glyphicon-eye-close')) {
+
+		$(this).removeClass('glyphicon-eye-close');
+
+		$(this).addClass('glyphicon-eye-open');
+
+		$('.eye-class-3d').attr('type', 'text');
+
+	} else {
+
+		$(this).removeClass('glyphicon-eye-open');
+
+		$(this).addClass('glyphicon-eye-close');
+
+		$('.eye-class-3d').attr('type', 'password');
+	}
+});
+$('#exampleModal-2d #eye-2d').click(function() {
+
+if ($(this).hasClass('glyphicon-eye-close')) {
+
+	$(this).removeClass('glyphicon-eye-close');
+
+	$(this).addClass('glyphicon-eye-open');
+
+	$('.eye-class-2d').attr('type', 'text');
+
+} else {
+
+	$(this).removeClass('glyphicon-eye-open');
+
+	$(this).addClass('glyphicon-eye-close');
+
+	$('.eye-class-2d').attr('type', 'password');
+}
+});
+});
+
+// register eye js
+$(function() {
+
+    $('#exampleModal-two #eye').click(function() {
+
+        if ($(this).hasClass('glyphicon-eye-close')) {
+
+            $(this).removeClass('glyphicon-eye-close');
+
+            $(this).addClass('glyphicon-eye-open');
+
+            $('.eye-class').attr('type', 'text');
+
+        } else {
+
+            $(this).removeClass('glyphicon-eye-open');
+
+            $(this).addClass('glyphicon-eye-close');
+
+            $('.eye-class').attr('type', 'password');
+        }
+  
+});
+
+
+    $('#exampleModal-two #eye-sec').click(function() {
+
+        if ($(this).hasClass('glyphicon-eye-close')) {
+
+            $(this).removeClass('glyphicon-eye-close');
+
+            $(this).addClass('glyphicon-eye-open');
+
+            $('.eye-class-sec-reg-conf').attr('type', 'text');
+
+        } else {
+
+            $(this).removeClass('glyphicon-eye-open');
+
+            $(this).addClass('glyphicon-eye-close');
+
+            $('.eye-class-sec-reg-conf').attr('type', 'password');
+        }
+    });
+});
+
+$(function() {
+
+$('#exampleModal-two-3d #eye').click(function() {
+
+	if ($(this).hasClass('glyphicon-eye-close')) {
+
+		$(this).removeClass('glyphicon-eye-close');
+
+		$(this).addClass('glyphicon-eye-open');
+
+		$('.eye-class').attr('type', 'text');
+
+	} else {
+
+		$(this).removeClass('glyphicon-eye-open');
+
+		$(this).addClass('glyphicon-eye-close');
+
+		$('.eye-class').attr('type', 'password');
+	}
+});
+
+
+$('#exampleModal-two-3d #eye-sec').click(function() {
+
+	if ($(this).hasClass('glyphicon-eye-close')) {
+
+		$(this).removeClass('glyphicon-eye-close');
+
+		$(this).addClass('glyphicon-eye-open');
+
+		$('.eye-class-sec-reg-conf').attr('type', 'text');
+
+	} else {
+
+		$(this).removeClass('glyphicon-eye-open');
+
+		$(this).addClass('glyphicon-eye-close');
+
+		$('.eye-class-sec-reg-conf').attr('type', 'password');
+	}
+});
+});
+
+//Make the DIV element draggagle:
+dragElement(document.getElementById("projects-ID"));
+
+function dragElement(elmnt) {
+    var pos1 = 0,
+        pos2 = 0,
+        pos3 = 0,
+        pos4 = 0;
+    if (document.getElementById(elmnt.id + "header")) {
+        /* if present, the header is where you move the DIV from:*/
+        document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+    } else {
+        /* otherwise, move the DIV from anywhere inside the DIV:*/
+        elmnt.onmousedown = dragMouseDown;
+    }
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        /* stop moving when mouse button is released:*/
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}
+// 2d view page
+dragElement(document.getElementById("projects-ID-2d"));
+
+function dragElement(elmnt) {
+    var pos1 = 0,
+        pos2 = 0,
+        pos3 = 0,
+        pos4 = 0;
+    if (document.getElementById(elmnt.id + "header")) {
+        /* if present, the header is where you move the DIV from:*/
+        document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+    } else {
+        /* otherwise, move the DIV from anywhere inside the DIV:*/
+        elmnt.onmousedown = dragMouseDown;
+    }
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        /* stop moving when mouse button is released:*/
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}
+// projects toggles
+$('.first-projects-component').click(function() {
+    $('.first-projects-items-imgs').toggle();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.second-projects-component').click(function() {
+    $('.second-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.third-projects-component').click(function() {
+    $('.third-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.four-projects-component').click(function() {
+    $('.four-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+
+$('.five-projects-component').click(function() {
+    $('.five-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.six-projects-component').click(function() {
+    $('.six-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.seven-projects-component').click(function() {
+    $('.seven-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.eight-projects-component').click(function() {
+    $('.eight-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.nine-projects-component').click(function() {
+    $('.nine-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.ten-projects-items-imgs').hide();
+});
+$('.ten-projects-component').click(function() {
+    $('.ten-projects-items-imgs').toggle();
+    $('.first-projects-items-imgs').hide();
+    $('.second-projects-items-imgs').hide();
+    $('.third-projects-items-imgs').hide();
+    $('.four-projects-items-imgs').hide();
+    $('.five-projects-items-imgs').hide();
+    $('.six-projects-items-imgs').hide();
+    $('.seven-projects-items-imgs').hide();
+    $('.eight-projects-items-imgs').hide();
+    $('.nine-projects-items-imgs').hide();
+});
+</script>
+
+
+
+</body>
+
+</html>
